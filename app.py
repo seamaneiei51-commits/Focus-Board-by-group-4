@@ -19,19 +19,31 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .main { background: #f7f7f2; }
-    [data-testid="stSidebar"] { background: #202625; }
-    [data-testid="stSidebar"] * { color: #f4f1e8; }
+    :root {
+        --focus-accent: #e07a5f;
+        --focus-success: #81b29a;
+    }
+    .main { background: var(--background-color); }
+    [data-testid="stSidebar"] { background: var(--secondary-background-color); }
+    [data-testid="stSidebar"] * { color: var(--text-color) !important; }
     .hero { padding: 1.2rem 0 1rem; }
-    .eyebrow { color: #e07a5f; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
-    .hero h1 { color: #202625; font-size: 3rem; margin: .2rem 0; }
-    .hero p { color: #68716d; font-size: 1.05rem; }
-    .metric { background: white; border: 1px solid #e4e3dc; border-radius: 10px; padding: 1rem; }
-    .task-card { background: white; border-left: 5px solid #e07a5f; border-radius: 8px; padding: .85rem 1rem; margin-bottom: .65rem; box-shadow: 0 2px 8px rgba(32,38,37,.04); }
-    .task-card.done { border-left-color: #81b29a; opacity: .7; }
-    .task-title { color: #202625; font-size: 1.05rem; font-weight: 650; }
+    .eyebrow { color: var(--focus-accent); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
+    .hero h1, .hero p, .metric, .metric h2 { color: var(--text-color) !important; }
+    .hero h1 { font-size: 3rem; margin: .2rem 0; }
+    .hero p { font-size: 1.05rem; }
+    .metric { background: var(--secondary-background-color); border: 1px solid var(--text-color); border-radius: 10px; padding: 1rem; }
+    .metric h2 { margin: .35rem 0 0; }
+    .task-card { background: var(--secondary-background-color); border-left: 5px solid var(--focus-accent); border-radius: 8px; padding: .85rem 1rem; margin-bottom: .65rem; box-shadow: 0 2px 8px rgba(32,38,37,.04); }
+    .task-card.done { border-left-color: var(--focus-success); opacity: .7; }
+    .task-title, .task-meta { color: var(--text-color) !important; }
+    .task-title { font-size: 1.05rem; font-weight: 650; }
     .task-title.done { text-decoration: line-through; }
-    .task-meta { color: #68716d; font-size: .82rem; margin-top: .35rem; }
+    .task-meta { font-size: .82rem; margin-top: .35rem; opacity: .8; }
+    @media (max-width: 768px) {
+        .hero h1 { font-size: 2.2rem; }
+        .metric { padding: .7rem; }
+        .metric h2 { font-size: 1.35rem; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -125,26 +137,6 @@ with st.sidebar:
     st.markdown("## Focus Board")
     st.caption("A small workspace for getting things done")
     st.divider()
-    st.markdown("### Add a task")
-    with st.form("add_task_form", clear_on_submit=True):
-        title = st.text_input("Task name", placeholder="What needs to happen?")
-        category = st.selectbox("Category", CATEGORIES)
-        priority = st.select_slider("Priority", options=PRIORITIES, value="Medium")
-        due_date = st.date_input("Deadline", value=None)
-        due_time = st.time_input("Time", value=time(17, 0))
-        notes = st.text_area("Notes", placeholder="Optional details...")
-        submitted = st.form_submit_button("Add task", use_container_width=True)
-
-    if submitted:
-        if not title.strip():
-            st.error("กรุณาใส่ชื่องานก่อนเพิ่มรายการ")
-        else:
-            add_task(st.session_state.tasks, title, category, priority, due_date, due_time, notes)
-            save_tasks(st.session_state.tasks)
-            st.success("เพิ่มงานแล้ว")
-            st.rerun()
-
-    st.divider()
     st.caption("Built with Python concepts from LAB01-LAB08")
 
 st.markdown(
@@ -181,6 +173,29 @@ for column, (label, value) in zip(metric_columns, metrics):
 
 st.progress(progress, text=f"Progress: {completed_count}/{len(all_tasks)} completed")
 st.divider()
+
+with st.expander("➕ Add a task", expanded=False):
+    with st.form("add_task_form", clear_on_submit=True):
+        title = st.text_input("Task name", placeholder="What needs to happen?")
+        form_columns = st.columns(3)
+        with form_columns[0]:
+            category = st.selectbox("Category", CATEGORIES)
+        with form_columns[1]:
+            priority = st.select_slider("Priority", options=PRIORITIES, value="Medium")
+        with form_columns[2]:
+            due_date = st.date_input("Deadline", value=None)
+        due_time = st.time_input("Time", value=time(17, 0))
+        notes = st.text_area("Notes", placeholder="Optional details...")
+        submitted = st.form_submit_button("Add task", use_container_width=True)
+
+    if submitted:
+        if not title.strip():
+            st.error("กรุณาใส่ชื่องานก่อนเพิ่มรายการ")
+        else:
+            add_task(st.session_state.tasks, title, category, priority, due_date, due_time, notes)
+            save_tasks(st.session_state.tasks)
+            st.success("เพิ่มงานแล้ว")
+            st.rerun()
 
 filter_columns = st.columns([2, 1, 1])
 with filter_columns[0]:
