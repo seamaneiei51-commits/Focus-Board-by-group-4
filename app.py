@@ -199,11 +199,13 @@ with st.expander("➕ Add a task", expanded=False):
 
 filter_columns = st.columns([2, 1, 1])
 with filter_columns[0]:
-    search_text = st.text_input("Search", placeholder="Search tasks or notes...", label_visibility="collapsed")
+    search_text = st.text_input("Search", placeholder="Search tasks or notes...")
 with filter_columns[1]:
-    selected_category = st.selectbox("Category", ["All"] + CATEGORIES, label_visibility="collapsed")
+    selected_category = st.selectbox("Category", ["All"] + CATEGORIES)
 with filter_columns[2]:
-    selected_status = st.selectbox("Status", ["All", "Active", "Completed"], label_visibility="collapsed")
+    selected_status = st.selectbox("Status", ["All", "Active", "Completed"])
+
+st.caption("All = แสดงทุกหมวดหมู่หรือทุกสถานะ โดยไม่กรองรายการ")
 
 visible_tasks = [
     task
