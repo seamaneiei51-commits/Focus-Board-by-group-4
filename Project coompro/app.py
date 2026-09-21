@@ -32,12 +32,17 @@ st.markdown(
         --focus-success: #81b29a;
     }
     .main { background: var(--background-color); }
+    section[data-testid="stSidebar"],
     [data-testid="stSidebar"],
     [data-testid="stSidebarCollapsedControl"],
     [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarNav"],
     button[aria-label="Open sidebar"],
     button[aria-label="Close sidebar"] {
         display: none !important;
+    }
+    [data-testid="stAppViewContainer"] > .main {
+        margin-left: 0 !important;
     }
     .hero { padding: 1.2rem 0 1rem; }
     .eyebrow { color: var(--focus-accent); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
@@ -56,6 +61,29 @@ st.markdown(
         .hero h1 { font-size: 2.2rem; }
         .metric { padding: .7rem; }
         .metric h2 { font-size: 1.35rem; }
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            row-gap: .5rem;
+        }
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+            min-width: 46% !important;
+            flex: 1 1 46% !important;
+        }
+        [data-testid="stHorizontalBlock"] button {
+            white-space: normal !important;
+            min-height: 2.6rem;
+        }
+    }
+    @media (min-width: 769px) and (max-width: 1100px) {
+        .hero h1 { font-size: 2.5rem; }
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            row-gap: .5rem;
+        }
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+            min-width: 23% !important;
+            flex: 1 1 23% !important;
+        }
     }
     </style>
     """,
