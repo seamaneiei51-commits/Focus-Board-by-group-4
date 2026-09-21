@@ -1,19 +1,28 @@
 import json
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
+import re
 from pathlib import Path
 from uuid import uuid4
 
-import streamlit as st
+import streamlit as stProject coompro/app.pymain
 
-DATA_FILE = Path("tasks.json")
 CATEGORIES = ["Personal", "Study", "Work", "Project"]
 PRIORITIES = ["Low", "Medium", "High"]
+REMINDER_OPTIONS = {
+    "No reminder": 0,
+    "5 minutes before": 5,
+    "15 minutes before": 15,
+    "30 minutes before": 30,
+    "1 hour before": 60,
+    "1 day before": 1440,
+}
+APP_URL = "https://focus-board-by-group-4.streamlit.app"
 
 st.set_page_config(
     page_title="Focus Board",
     page_icon="✅",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown(
@@ -24,8 +33,18 @@ st.markdown(
         --focus-success: #81b29a;
     }
     .main { background: var(--background-color); }
-    [data-testid="stSidebar"] { background: var(--secondary-background-color); }
-    [data-testid="stSidebar"] * { color: var(--text-color) !important; }
+    section[data-testid="stSidebar"],
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarNav"],
+    button[aria-label="Open sidebar"],
+    button[aria-label="Close sidebar"] {
+        display: none !important;
+    }
+    [data-testid="stAppViewContainer"] > .main {
+        margin-left: 0 !important;
+    }
     .hero { padding: 1.2rem 0 1rem; }
     .eyebrow { color: var(--focus-accent); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
     .hero h1, .hero p, .metric, .metric h2 { color: var(--text-color) !important; }
@@ -43,11 +62,58 @@ st.markdown(
         .hero h1 { font-size: 2.2rem; }
         .metric { padding: .7rem; }
         .metric h2 { font-size: 1.35rem; }
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            row-gap: .5rem;
+        }
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+            min-width: 46% !important;
+            flex: 1 1 46% !important;
+        }
+        [data-testid="stHorizontalBlock"] button {
+            white-space: normal !important;
+            min-height: 2.6rem;
+        }
+    }
+    @media (min-width: 769px) and (max-width: 1100px) {
+        .hero h1 { font-size: 2.5rem; }
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            row-gap: .5rem;
+        }
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+            min-width: 23% !important;
+            flex: 1 1 23% !important;
+        }
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
+
+st.link_button("Open Focus Board web app", APP_URL, type="primary")
+
+
+if "profile_name" not in st.session_state:
+    st.markdown("# Focus Board")
+    st.write("ใส่ชื่อของคุณเพื่อเปิดรายการงานส่วนตัว")
+    with st.form("profile_form"):
+        entered_name = st.text_input("Your name", placeholder="เช่น Alice")
+        continue_button = st.form_submit_button("Continue", type="primary")
+    if continue_button:
+        clean_name = entered_name.strip()
+        if not clean_name:
+            st.error("กรุณาใส่ชื่อก่อนเข้าใช้งาน")
+        else:
+            st.session_state.profile_name = clean_name
+            st.rerun()
+    st.info("ข้อมูลจะแยกตามชื่อที่กรอกในเบราว์เซอร์นี้")
+    st.stop()
+
+
+profile_key = re.sub(r"[^a-zA-Z0-9_-]", "_", st.session_state.profile_name)[:40]
+DATA_FILE = Path("user_data") / f"{profile_key}.json"
+DATA_FILE.parent.mkdir(exist_ok=True)
 
 
 def load_tasks():
@@ -71,7 +137,7 @@ def save_tasks(tasks):
         st.error(f"บันทึกข้อมูลไม่สำเร็จ: {error}")
 
 
-def add_task(tasks, title, category, priority, due_date, due_time, notes):
+def add_task(tasks, title, category, priority, due_date, due_time, reminder, notes):
     due_at = ""
     if due_date:
         due_at = datetime.combine(due_date, due_time or time(17, 0)).isoformat()
@@ -82,6 +148,7 @@ def add_task(tasks, title, category, priority, due_date, due_time, notes):
             "category": category,
             "priority": priority,
             "due_at": due_at,
+            "reminder_minutes": REMINDER_OPTIONS[reminder],
             "notes": notes.strip(),
             "completed": False,
         }
@@ -130,14 +197,52 @@ def get_task_due(task):
     return task.get("due_at") or task.get("due_date", "")
 
 
+def format_reminder(task):
+    reminder = int(task.get("reminder_minutes", 0))
+    if reminder == 0:
+        return "No reminder"
+    if reminder < 60:
+        return f"Reminder {reminder} min before"
+    if reminder % 1440 == 0:
+        return f"Reminder {reminder // 1440} day before"
+    return f"Reminder {reminder // 60} hr before"
+
+
+def ics_escape(value):
+    return str(value).replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def create_calendar_event(task):
+    """Create a calendar file with an optional reminder alarm."""
+    due_value = get_task_due(task)
+    due = datetime.fromisoformat(due_value)
+    end = due.replace(second=0, microsecond=0) + timedelta(minutes=30)
+    start_text = due.strftime("%Y%m%dT%H%M%S")
+    end_text = end.strftime("%Y%m%dT%H%M%S")
+    reminder = int(task.get("reminder_minutes", 0))
+    alarm = ""
+    if reminder:
+        alarm = (
+            "BEGIN:VALARM\n"
+            f"TRIGGER:-PT{reminder}M\n"
+            "ACTION:DISPLAY\n"
+            f"DESCRIPTION:{ics_escape(task['title'])}\n"
+            "END:VALARM\n"
+        )
+    return (
+        "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Focus Board//EN\n"
+        "BEGIN:VEVENT\n"
+        f"UID:{task['id']}@focus-board\n"
+        f"DTSTART:{start_text}\nDTEND:{end_text}\n"
+        f"SUMMARY:{ics_escape(task['title'])}\n"
+        f"DESCRIPTION:{ics_escape(task.get('notes', ''))}\n"
+        f"CATEGORIES:{ics_escape(task.get('category', ''))}\n"
+        f"{alarm}END:VEVENT\nEND:VCALENDAR\n"
+    )
+
+
 if "tasks" not in st.session_state:
     st.session_state.tasks = load_tasks()
-
-with st.sidebar:
-    st.markdown("## Focus Board")
-    st.caption("A small workspace for getting things done")
-    st.divider()
-    st.caption("Built with Python concepts from LAB01-LAB08")
 
 st.markdown(
     """
@@ -149,6 +254,14 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+account_columns = st.columns([8, 1])
+with account_columns[0]:
+    st.caption(f"โปรไฟล์: {st.session_state.profile_name}")
+with account_columns[1]:
+    if st.button("Change profile"):
+        del st.session_state["profile_name"]
+        st.rerun()
 
 all_tasks = st.session_state.tasks
 completed_count = sum(task["completed"] for task in all_tasks)
@@ -185,6 +298,7 @@ with st.expander("➕ Add a task", expanded=False):
         with form_columns[2]:
             due_date = st.date_input("Deadline", value=None)
         due_time = st.time_input("Time", value=time(17, 0))
+        reminder = st.selectbox("Reminder", list(REMINDER_OPTIONS))
         notes = st.text_area("Notes", placeholder="Optional details...")
         submitted = st.form_submit_button("Add task", use_container_width=True)
 
@@ -192,7 +306,7 @@ with st.expander("➕ Add a task", expanded=False):
         if not title.strip():
             st.error("กรุณาใส่ชื่องานก่อนเพิ่มรายการ")
         else:
-            add_task(st.session_state.tasks, title, category, priority, due_date, due_time, notes)
+            add_task(st.session_state.tasks, title, category, priority, due_date, due_time, reminder, notes)
             save_tasks(st.session_state.tasks)
             st.success("เพิ่มงานแล้ว")
             st.rerun()
@@ -228,11 +342,11 @@ for task in visible_tasks:
     )
     st.markdown(
         f'<div class="{card_class}"><div class="{title_class}">{"✓" if is_done else "○"} {task["title"]}</div>'
-        f'<div class="task-meta">{task["category"]} · {task["priority"]} priority · {format_due_date(get_task_due(task))}</div>'
+        f'<div class="task-meta">{task["category"]} · {task["priority"]} priority · {format_due_date(get_task_due(task))} · {format_reminder(task)}</div>'
         f'{notes_html}</div>',
         unsafe_allow_html=True,
     )
-    action_columns = st.columns([1, 1, 1, 7])
+    action_columns = st.columns([1, 1, 1, 1, 6])
     if action_columns[0].button("Undo" if is_done else "Done", key=f"done_{task['id']}"):
         task["completed"] = not task["completed"]
         save_tasks(all_tasks)
@@ -244,6 +358,22 @@ for task in visible_tasks:
     if action_columns[2].button("Edit", key=f"edit_{task['id']}"):
         st.session_state[f"editing_{task['id']}"] = not st.session_state.get(f"editing_{task['id']}", False)
         st.rerun()
+    if get_task_due(task):
+        action_columns[3].download_button(
+            "Add to Calendar",
+            data=create_calendar_event(task),
+            file_name=f"{task['title']}.ics",
+            mime="text/calendar",
+            key=f"calendar_{task['id']}",
+        )
+    else:
+        action_columns[3].button(
+            "Add to Calendar",
+            key=f"calendar_disabled_{task['id']}",
+            disabled=True,
+            help="กด Edit แล้วกำหนดวันและเวลาก่อนเพิ่มเข้า Calendar",
+        )
+        st.caption("กำหนดวันและเวลาก่อนกด Add to Calendar")
 
     if st.session_state.get(f"editing_{task['id']}", False):
         current_due = get_task_due(task)
@@ -263,6 +393,17 @@ for task in visible_tasks:
             edited_priority = st.select_slider("Priority", options=PRIORITIES, value=task["priority"])
             edited_due_date = st.date_input("Deadline", value=current_due_date)
             edited_due_time = st.time_input("Time", value=current_due_time)
+            current_reminder = next(
+                (
+                    label
+                    for label, minutes in REMINDER_OPTIONS.items()
+                    if minutes == task.get("reminder_minutes", 0)
+                ),
+                "No reminder",
+            )
+            edited_reminder = st.selectbox(
+                "Reminder", list(REMINDER_OPTIONS), index=list(REMINDER_OPTIONS).index(current_reminder)
+            )
             edited_notes = st.text_area("Notes", value=task.get("notes", ""))
             save_edit = st.form_submit_button("Save changes")
         if save_edit and edited_title.strip():
@@ -273,6 +414,7 @@ for task in visible_tasks:
                 if edited_due_date
                 else ""
             )
+            task["reminder_minutes"] = REMINDER_OPTIONS[edited_reminder]
             task["notes"] = edited_notes.strip()
             save_tasks(all_tasks)
             st.session_state[f"editing_{task['id']}"] = False
