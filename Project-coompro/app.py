@@ -16,7 +16,6 @@ REMINDER_OPTIONS = {
     "1 hour before": 60,
     "1 day before": 1440,
 }
-APP_URL = "https://focus-board-by-group-4-dta2gkqpsphsu8k4ggjvw.streamlit.app"
 
 st.set_page_config(
     page_title="Focus Board",
@@ -90,9 +89,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-st.link_button("Open Focus Board web app", APP_URL, type="primary")
-
 
 if "profile_name" not in st.session_state:
     st.markdown("# Focus Board")
