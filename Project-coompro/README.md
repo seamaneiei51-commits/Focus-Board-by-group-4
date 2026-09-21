@@ -4,11 +4,11 @@
 
 ## ลิงก์สำหรับส่งงาน
 
-### [เปิดแอป Focus Board](https://focus-board-by-group-4.streamlit.app)
+### [เปิดแอป Focus Board](https://focus-board-by-group-4-dta2gkqpsphsu8k4ggjvw.streamlit.app)
 
 ลิงก์นี้ใช้ส่งให้เพื่อนทดลองใช้และส่งให้อาจารย์ตรวจงานได้:
 
-- **Web app:** https://focus-board-by-group-4.streamlit.app
+- **Web app:** https://focus-board-by-group-4-dta2gkqpsphsu8k4ggjvw.streamlit.app
 - **GitHub source code:** https://github.com/seamaneiei51-commits/Focus-Board-by-group-4
 
 ถ้าลิงก์ Web app เปิดไม่ได้ ให้เข้า Streamlit Cloud แล้วคัดลอก App URL จากหน้าแอปมาแทนที่ลิงก์ด้านบน
