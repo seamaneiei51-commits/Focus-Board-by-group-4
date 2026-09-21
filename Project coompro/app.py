@@ -194,6 +194,17 @@ def get_task_due(task):
     return task.get("due_at") or task.get("due_date", "")
 
 
+def format_reminder(task):
+    reminder = int(task.get("reminder_minutes", 0))
+    if reminder == 0:
+        return "No reminder"
+    if reminder < 60:
+        return f"Reminder {reminder} min before"
+    if reminder % 1440 == 0:
+        return f"Reminder {reminder // 1440} day before"
+    return f"Reminder {reminder // 60} hr before"
+
+
 def ics_escape(value):
     return str(value).replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
@@ -328,7 +339,7 @@ for task in visible_tasks:
     )
     st.markdown(
         f'<div class="{card_class}"><div class="{title_class}">{"✓" if is_done else "○"} {task["title"]}</div>'
-        f'<div class="task-meta">{task["category"]} · {task["priority"]} priority · {format_due_date(get_task_due(task))}</div>'
+        f'<div class="task-meta">{task["category"]} · {task["priority"]} priority · {format_due_date(get_task_due(task))} · {format_reminder(task)}</div>'
         f'{notes_html}</div>',
         unsafe_allow_html=True,
     )
@@ -346,7 +357,7 @@ for task in visible_tasks:
         st.rerun()
     if get_task_due(task):
         action_columns[3].download_button(
-            "Calendar",
+            "Add to Calendar",
             data=create_calendar_event(task),
             file_name=f"{task['title']}.ics",
             mime="text/calendar",
