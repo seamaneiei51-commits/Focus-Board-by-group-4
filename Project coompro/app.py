@@ -363,6 +363,14 @@ for task in visible_tasks:
             mime="text/calendar",
             key=f"calendar_{task['id']}",
         )
+    else:
+        action_columns[3].button(
+            "Add to Calendar",
+            key=f"calendar_disabled_{task['id']}",
+            disabled=True,
+            help="กด Edit แล้วกำหนดวันและเวลาก่อนเพิ่มเข้า Calendar",
+        )
+        st.caption("กำหนดวันและเวลาก่อนกด Add to Calendar")
 
     if st.session_state.get(f"editing_{task['id']}", False):
         current_due = get_task_due(task)
