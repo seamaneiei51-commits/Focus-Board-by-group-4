@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from uuid import uuid4
 
-import streamlit as stProject coompro/app.pymain
+import streamlit as st
 
 CATEGORIES = ["Personal", "Study", "Work", "Project"]
 PRIORITIES = ["Low", "Medium", "High"]
