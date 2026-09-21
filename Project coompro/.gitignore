@@ -1,0 +1,8 @@
+# Private task data
+user_data/
+tasks.json
+
+# Python and local files
+__pycache__/
+*.py[cod]
+.DS_Store
