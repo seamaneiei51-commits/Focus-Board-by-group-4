@@ -32,7 +32,13 @@ st.markdown(
         --focus-success: #81b29a;
     }
     .main { background: var(--background-color); }
-    [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none; }
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="stSidebarCollapseButton"],
+    button[aria-label="Open sidebar"],
+    button[aria-label="Close sidebar"] {
+        display: none !important;
+    }
     .hero { padding: 1.2rem 0 1rem; }
     .eyebrow { color: var(--focus-accent); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
     .hero h1, .hero p, .metric, .metric h2 { color: var(--text-color) !important; }
