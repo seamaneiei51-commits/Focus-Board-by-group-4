@@ -1,6 +1,6 @@
 import json
 from datetime import date, datetime, time, timedelta
-from hashlib import sha256
+import re
 from pathlib import Path
 from uuid import uuid4
 
@@ -57,18 +57,25 @@ st.markdown(
 )
 
 
-if not st.user.is_logged_in:
+if "profile_name" not in st.session_state:
     st.markdown("# Focus Board")
-    st.write("กรุณาเข้าสู่ระบบเพื่อดูรายการงานส่วนตัวของคุณ")
-    st.info("ข้อมูลของแต่ละบัญชีจะแยกออกจากกัน")
-    if st.button("Sign in with Google", type="primary"):
-        st.login("google")
+    st.write("ใส่ชื่อของคุณเพื่อเปิดรายการงานส่วนตัว")
+    with st.form("profile_form"):
+        entered_name = st.text_input("Your name", placeholder="เช่น Alice")
+        continue_button = st.form_submit_button("Continue", type="primary")
+    if continue_button:
+        clean_name = entered_name.strip()
+        if not clean_name:
+            st.error("กรุณาใส่ชื่อก่อนเข้าใช้งาน")
+        else:
+            st.session_state.profile_name = clean_name
+            st.rerun()
+    st.info("ข้อมูลจะแยกตามชื่อที่กรอกในเบราว์เซอร์นี้")
     st.stop()
 
 
-user_id = st.user.get("sub") or st.user.get("email")
-user_key = sha256(str(user_id).encode("utf-8")).hexdigest()[:24]
-DATA_FILE = Path("user_data") / f"{user_key}.json"
+profile_key = re.sub(r"[^a-zA-Z0-9_-]", "_", st.session_state.profile_name)[:40]
+DATA_FILE = Path("user_data") / f"{profile_key}.json"
 DATA_FILE.parent.mkdir(exist_ok=True)
 
 
@@ -202,10 +209,11 @@ st.markdown(
 
 account_columns = st.columns([8, 1])
 with account_columns[0]:
-    st.caption(f"บัญชี: {st.user.get('email', 'Google account')}")
+    st.caption(f"โปรไฟล์: {st.session_state.profile_name}")
 with account_columns[1]:
-    if st.button("Sign out"):
-        st.logout()
+    if st.button("Change profile"):
+        del st.session_state["profile_name"]
+        st.rerun()
 
 all_tasks = st.session_state.tasks
 completed_count = sum(task["completed"] for task in all_tasks)

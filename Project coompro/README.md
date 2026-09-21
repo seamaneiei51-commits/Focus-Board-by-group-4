@@ -15,7 +15,7 @@
 - แสดงสถิติและ progress
 - เรียงงานตามสถานะ, deadline และ priority
 - รองรับการใช้งานบนหน้าจอมือถือและธีมมืดของ Streamlit
-- ล็อกอินด้วย Google และแยกข้อมูลงานของแต่ละบัญชี
+- เลือกโปรไฟล์และแยกข้อมูลงานของแต่ละชื่อผู้ใช้
 - บันทึกข้อมูลลง `tasks.json`
 
 ## รันในเครื่อง
@@ -36,20 +36,9 @@ streamlit run app.py
 
 หลัง Deploy สำเร็จ Streamlit จะสร้างลิงก์เว็บไซต์ให้โดยอัตโนมัติ
 
-## การตั้งค่า Login
+## การเลือกโปรไฟล์
 
-ฟีเจอร์ Login ใช้ Google OAuth โดยต้องใส่ค่าต่อไปนี้ใน Streamlit Cloud ที่เมนู **Settings > Secrets**:
-
-```toml
-[auth]
-redirect_uri = "https://YOUR-APP-NAME.streamlit.app/oauth2callback"
-cookie_secret = "สร้างค่าลับแบบสุ่มที่ยาวและเก็บเป็นความลับ"
-client_id = "Google OAuth client ID"
-client_secret = "Google OAuth client secret"
-server_metadata_url = "https://accounts.google.com/.well-known/openid-configuration"
-```
-
-ใน Google Cloud Console ต้องเพิ่ม URL ใน `redirect_uri` เป็น Authorized redirect URI ก่อนใช้งาน
+เมื่อเปิดแอป ให้กรอกชื่อของตัวเองก่อนใช้งาน ข้อมูลจะแยกเป็นไฟล์ตามชื่อที่กรอก และสามารถกด `Change profile` เพื่อเปลี่ยนโปรไฟล์ได้
 
 ## การตั้งแจ้งเตือน
 
